@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController
 @Suppress("ktlint:standard:max-line-length")
 @RestController
 class PingpongController(
-    private val jsonParser: Json = Json, // Consider defining a bean of type 'kotlinx.serialization.json.Json' in your configuration.
+    private val jsonParser: Json,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(PingpongController::class.java)
 
@@ -43,12 +43,22 @@ class PingpongController(
     @PostMapping("/score", produces = ["application/json"])
     suspend fun pingpongScore(
         @RequestBody inputScore: Score,
-    ): ResponseEntity<Any?> =
+    ): ResponseEntity<String> =
         resolve(
             f = {
                 inputScore
                     .validateInput()
                     .map { score -> ResponseInputScore(score.toInput()) }
+                    .mapLeft { sdkDomainError ->
+                        when (sdkDomainError) {
+                            is com.sparetimedevs.ami.core.ParseError -> ParseError(sdkDomainError.message)
+                            is com.sparetimedevs.ami.core.AccumulatedValidationErrors ->
+                                AccumulatedValidationErrors(
+                                    sdkDomainError.message,
+                                    sdkDomainError.validationErrors,
+                                )
+                        }
+                    }
             },
             success = { a ->
                 handleSuccessWithDefaultHandler(jsonParser, a)

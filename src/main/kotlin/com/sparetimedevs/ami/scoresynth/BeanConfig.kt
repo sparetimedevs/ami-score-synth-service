@@ -16,14 +16,24 @@
 
 package com.sparetimedevs.ami.scoresynth
 
-import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ContextConfiguration
+import kotlinx.serialization.json.Json
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 
-@SpringBootTest
-@ContextConfiguration(classes = [TestBeanConfig::class])
-class AmiScoreSynthApplicationTests {
-    @Test
-    fun contextLoads() {
+@Configuration
+class BeanConfig {
+    @Bean
+    fun jsonParser(): Json =
+        Json {
+            prettyPrint = true
+            encodeDefaults = true
+        }
+
+    @Bean
+    fun audioSynthesizer(): AudioSynthesizer {
+        val fluidSynthPath = "/usr/local/bin/fluidsynth" // Path to FluidSynth executable
+        val soundFontPath = "/Users/joram/temp/soundfont.sf2" // Path to your SoundFont file
+        val fluidSynthClient = FluidSynthClientImpl(fluidSynthPath, soundFontPath)
+        return AudioSynthesizer(fluidSynthClient)
     }
 }

@@ -19,7 +19,12 @@ package com.sparetimedevs.ami.scoresynth
 import arrow.core.Either
 import arrow.core.flatten
 import arrow.core.right
-import kotlin.contracts.ExperimentalContracts
+import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
+import com.sparetimedevs.ami.scoresynth.handler.handleSuccessWithDefaultHandler
+import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
+import kotlinx.serialization.json.Json
+import org.slf4j.Logger
+import org.springframework.http.ResponseEntity
 
 /**
  * The resolve function can resolve any function that yields an Either into one type of value.
@@ -32,7 +37,6 @@ import kotlin.contracts.ExperimentalContracts
  * @param unrecoverableState the function to apply if [resolve] is in an unrecoverable state.
  * @return the result of applying the [resolve] function.
  */
-@OptIn(ExperimentalContracts::class)
 inline fun <E, A, B> resolve(
     f: () -> Either<E, A>,
     success: (a: A) -> Either<Throwable, B>,
@@ -58,3 +62,25 @@ inline fun <E, A, B> resolve(
             },
             { b: B -> b },
         )
+
+suspend inline fun <reified A> resolve(
+    jsonParser: Json,
+    logger: Logger,
+    f: () -> Either<DomainError, A>,
+): ResponseEntity<String> =
+    resolve(
+        f = f,
+        success = { a ->
+            handleSuccessWithDefaultHandler(jsonParser, a)
+        },
+        error = { domainError ->
+            handleDomainError(jsonParser, domainError)
+        },
+        throwable = { throwable ->
+            handleSystemFailure(jsonParser, throwable)
+        },
+        unrecoverableState = { throwable ->
+            logger.error("Something horrible happened when resolve was invoked. The exception is: $throwable")
+            Unit.right()
+        },
+    )
