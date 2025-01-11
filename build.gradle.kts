@@ -31,7 +31,7 @@ dependencies {
     val coroutinesVersion = "1.10.1"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$coroutinesVersion")
-    val serializationVersion = "1.7.3"
+    val serializationVersion = "1.8.0"
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     val arrowVersion = "1.2.4"
     implementation("io.arrow-kt:arrow-core:$arrowVersion")
