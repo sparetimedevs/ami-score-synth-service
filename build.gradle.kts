@@ -8,7 +8,7 @@ plugins {
     kotlin("jvm") version "2.1.0"
     kotlin("plugin.spring") version "2.1.0"
     kotlin("plugin.serialization") version "2.1.0"
-    id("com.diffplug.spotless") version "6.25.0"
+    id("com.diffplug.spotless") version "7.0.1"
 }
 
 group = "com.sparetimedevs"
