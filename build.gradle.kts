@@ -33,7 +33,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$coroutinesVersion")
     val serializationVersion = "1.8.0"
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
-    val arrowVersion = "1.2.4"
+    val arrowVersion = "2.0.0"
     implementation("io.arrow-kt:arrow-core:$arrowVersion")
     val amiMusicSdkVersion = "0.0.1-SNAPSHOT"
     implementation("com.sparetimedevs.ami:ami-music-sdk-kotlin:$amiMusicSdkVersion")
