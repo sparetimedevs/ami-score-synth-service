@@ -28,7 +28,7 @@ dependencies {
         // This needs to be excluded, else Spring Boot is still making use of Jackson instead of Kotlinx Serialization.
         exclude("org.springframework.boot", "spring-boot-starter-json")
     }
-    val coroutinesVersion = "1.9.0"
+    val coroutinesVersion = "1.10.1"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$coroutinesVersion")
     val serializationVersion = "1.7.3"
