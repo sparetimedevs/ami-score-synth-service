@@ -17,27 +17,34 @@
 package com.sparetimedevs.ami.scoresynth
 
 import java.io.File
+import java.io.InputStream
+import java.util.concurrent.TimeUnit
+import kotlin.io.path.createTempFile
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.readBytes
+import kotlin.io.path.writeBytes
 
 class AudioSynthesizer(
     private val fluidSynthPath: String,
     private val soundFontPath: String,
 ) {
     /**
-     * Transforms a MIDI file into a WAV file using FluidSynth.
+     * Transforms a MIDI file provided as an InputStream into a WAV file and returns the WAV data as a byte array.
      *
-     * @param midiFilePath Path to the input MIDI file on the file system.
-     * @param wavFilePath Path where the generated WAV file should be stored.
-     * @throws IllegalArgumentException If the input paths are invalid.
+     * @param midiStream InputStream containing the MIDI data.
+     * @return ByteArray containing the generated WAV file data.
      * @throws RuntimeException If the FluidSynth process fails.
      */
-    fun transformMidiToWav(
-        midiFilePath: String,
-        wavFilePath: String,
-    ) {
-        // Validate file paths
-        validateFileExists(midiFilePath, "MIDI file")
+    fun transformMidiToWav(midiStream: InputStream): ByteArray {
+        // Validate SoundFont file
         validateFileExists(soundFontPath, "SoundFont file")
-        validateParentDirectoryExists(wavFilePath, "Output WAV file")
+
+        // Write the MIDI data to a temporary buffer file
+        val midiTempFile = createTempFile("temp-midi", ".mid").apply { deleteIfExists() }
+        midiStream.use { input -> midiTempFile.writeBytes(input.readBytes()) }
+
+        // Write the WAV data to a temporary file
+        val wavTempFile = createTempFile("temp-wav", ".wav").apply { deleteIfExists() }
 
         // Construct the FluidSynth command
         val command =
@@ -45,9 +52,9 @@ class AudioSynthesizer(
                 fluidSynthPath,
                 "-ni", // Non-interactive mode
                 "-F",
-                wavFilePath, // Output file
+                wavTempFile.toString(), // Output to WAV file
                 soundFontPath, // SoundFont file
-                midiFilePath, // MIDI file
+                midiTempFile.toString(), // MIDI file
             )
 
         // Execute the command
@@ -56,16 +63,17 @@ class AudioSynthesizer(
                 .redirectErrorStream(true) // Redirect error output to standard output
                 .start()
 
-        // Read and log the process output
+        // Wait for the process to complete and capture output
         val output = process.inputStream.bufferedReader().readText()
-        process.waitFor()
-
-        // Check the exit code
-        if (process.exitValue() != 0) {
+        if (!process.waitFor(60, TimeUnit.SECONDS) || process.exitValue() != 0) {
             throw RuntimeException("FluidSynth failed: $output")
         }
 
-        println("Successfully generated WAV file: $wavFilePath")
+        // Return the generated WAV data as a byte array
+        return wavTempFile.readBytes().also {
+            wavTempFile.deleteIfExists() // Clean up the temporary WAV file
+            midiTempFile.deleteIfExists() // Clean up the temporary MIDI file
+        }
     }
 
     private fun validateFileExists(
@@ -75,16 +83,6 @@ class AudioSynthesizer(
         val file = File(filePath)
         if (!file.exists() || !file.isFile) {
             throw IllegalArgumentException("$fileType does not exist or is not a valid file: $filePath")
-        }
-    }
-
-    private fun validateParentDirectoryExists(
-        filePath: String,
-        fileType: String,
-    ) {
-        val parentDir = File(filePath).parentFile
-        if (parentDir == null || !parentDir.exists()) {
-            throw IllegalArgumentException("Parent directory for $fileType does not exist: $filePath")
         }
     }
 }

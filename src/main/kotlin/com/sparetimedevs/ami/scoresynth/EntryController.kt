@@ -30,6 +30,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 @RestController
 class EntryController(
@@ -40,21 +42,25 @@ class EntryController(
 
     // curl -v -XPOST localhost:8080/midi-to-wav -H "Content-Type: application/json" -d '{"midi":"wav"}'
     @PostMapping("/midi-to-wav", produces = ["application/json"])
-    suspend fun midiToWave(
+    suspend fun midiToWav(
         @RequestBody input: Input,
     ): ResponseEntity<Any?> =
         resolve(
             f = {
-                // Path to the FluidSynth executable (ensure it's installed and accessible)
-                val fluidSynthPath = "/usr/local/bin/fluidsynth" // Update as needed
+                val fluidSynthPath = "/usr/local/bin/fluidsynth" // Path to FluidSynth executable
                 val soundFontPath = "/Users/joram/temp/soundfont.sf2" // Path to your SoundFont file
-                val midiFilePath = "/Users/joram/temp/heigh_ho_nobody_home.mid" // Path to your input MIDI file
-                val wavFilePath = // Path to the output WAV file
-                    "/Users/joram/temp/output-${com.sparetimedevs.ami.core.util.randomUuidString()}.wav"
 
                 val synthesizer = AudioSynthesizer(fluidSynthPath, soundFontPath)
+
                 try {
-                    synthesizer.transformMidiToWav(midiFilePath, wavFilePath)
+                    // Load MIDI data
+                    val midiData = loadMidiData()
+                    val midiStream = ByteArrayInputStream(midiData)
+
+                    // Transform MIDI to WAV
+                    val wavData = synthesizer.transformMidiToWav(midiStream)
+
+                    println("Generated WAV data size: ${wavData.size} bytes")
                 } catch (e: Exception) {
                     println("Error: ${e.message}")
                 }
@@ -92,4 +98,44 @@ data class Response(
 fun Input.validateInput(): Either<DomainError, String> {
     // TODO implement validation
     return this.midi.right()
+}
+
+fun loadMidiData(): ByteArray {
+    val outputStream = ByteArrayOutputStream()
+
+    // Write the MIDI header (standard format 0, one track)
+    outputStream.write(byteArrayOf(0x4D.toByte(), 0x54.toByte(), 0x68.toByte(), 0x64.toByte())) // "MThd"
+    outputStream.write(byteArrayOf(0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x06.toByte())) // Header length
+    outputStream.write(byteArrayOf(0x00.toByte(), 0x00.toByte())) // Format 0
+    outputStream.write(byteArrayOf(0x00.toByte(), 0x01.toByte())) // One track
+    outputStream.write(byteArrayOf(0x00.toByte(), 0x60.toByte())) // Ticks per quarter note (96)
+
+    // Write the track chunk header
+    outputStream.write(byteArrayOf(0x4D.toByte(), 0x54.toByte(), 0x72.toByte(), 0x6B.toByte())) // "MTrk"
+    val trackData = ByteArrayOutputStream()
+
+    // Add a "note on" event (middle C, velocity 64)
+    // Delta time: 0, Note On, Note: 60, Velocity: 64
+    trackData.write(byteArrayOf(0x00.toByte(), 0x90.toByte(), 0x3C.toByte(), 0x40.toByte()))
+
+    // Add a "note off" event (middle C, velocity 64)
+    // Delta time: 96, Note Off, Note: 60, Velocity: 64
+    trackData.write(byteArrayOf(0x60.toByte(), 0x80.toByte(), 0x3C.toByte(), 0x40.toByte()))
+
+    // End of track
+    trackData.write(byteArrayOf(0x00.toByte(), 0xFF.toByte(), 0x2F.toByte(), 0x00.toByte())) // End of track meta event
+
+    // Write track chunk length and data
+    val trackBytes = trackData.toByteArray()
+    outputStream.write(
+        byteArrayOf(
+            (trackBytes.size shr 24).toByte(),
+            (trackBytes.size shr 16).toByte(),
+            (trackBytes.size shr 8).toByte(),
+            trackBytes.size.toByte(),
+        ),
+    )
+    outputStream.write(trackBytes)
+
+    return outputStream.toByteArray()
 }
