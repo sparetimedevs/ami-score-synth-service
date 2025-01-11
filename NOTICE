@@ -1,0 +1,27 @@
+=========================================================================
+==  NOTICE file for use with the Apache License, Version 2.0,          ==
+==  in this case for the Ami Score Synth Service distribution.         ==
+=========================================================================
+
+Ami Score Synth Service
+Copyright (c) 2025 sparetimedevs and respective authors and developers.
+
+This product includes software developed at
+JetBrains s.r.o and respective authors and developers
+(https://www.jetbrains.com/)
+under Apache License, Version 2.0
+
+This product includes software developed by
+VMware, Inc. and respective authors and developers
+(https://spring.io/)
+under the Apache License, Version 2.0.
+
+This product includes software developed by
+the respective authors and developers of Arrow
+(https://arrow-kt.io/)
+under Apache License, Version 2.0
+
+This product relies on software developed by
+the respective authors and developers of FluidSynth
+(https://www.fluidsynth.org/)
+under the GNU Lesser General Public License, Version 2.1.
