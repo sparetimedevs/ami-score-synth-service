@@ -26,19 +26,62 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
 @RestController
-class EntryController(
-    // Consider defining a bean of type 'kotlinx.serialization.json.Json' in your configuration.
-    private val jsonParser: Json = Json,
+class AudioController(
+    private val jsonParser: Json,
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(EntryController::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(AudioController::class.java)
+
+    @PostMapping("/audio", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun synthesizeAudio(
+        @RequestParam("file") inputFile: MultipartFile,
+        @RequestParam(value = "fileFormat", required = false) fileFormat: String?,
+    ): ResponseEntity<ByteArray> {
+        // Infer file type from Content-Type, query parameter, or file content
+        val format = fileFormat ?: detectFormat(inputFile)
+
+        val wavData =
+            when (format.lowercase()) {
+                "midi" -> synthesizeMidiToWav(inputFile.bytes)
+                "score" -> synthesizeScoreToWav(inputFile.bytes)
+                else -> throw IllegalArgumentException("Unsupported file format: $format")
+            }
+
+        // Return WAV file response
+        val headers =
+            HttpHeaders().apply {
+                contentType = MediaType.parseMediaType("audio/wav")
+                setContentDispositionFormData("attachment", "output.wav")
+            }
+        return ResponseEntity(wavData, headers, HttpStatus.OK)
+    }
+
+    private fun detectFormat(file: MultipartFile): String {
+        // TODO: Implement logic to inspect file contents or Content-Type
+        return if (file.originalFilename?.endsWith(".midi") == true) "midi" else "score"
+    }
+
+    private fun synthesizeMidiToWav(midiBytes: ByteArray): ByteArray {
+        // TODO: MIDI-to-WAV conversion logic
+        return byteArrayOf() // Stub
+    }
+
+    private fun synthesizeScoreToWav(scoreBytes: ByteArray): ByteArray {
+        // TODO: Score-to-WAV conversion logic
+        return byteArrayOf() // Stub
+    }
 
     // curl -v -XPOST localhost:8080/midi-to-wav -H "Content-Type: application/json" -d '{"midi":"wav"}'
     @PostMapping("/midi-to-wav", produces = ["application/json"])
