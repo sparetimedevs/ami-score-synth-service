@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController
 @Suppress("ktlint:standard:max-line-length")
 @RestController
 class PingpongController(
-    private val jsonParser: Json = Json, // Consider defining a bean of type 'kotlinx.serialization.json.Json' in your configuration.
+    private val jsonParser: Json,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(PingpongController::class.java)
 
@@ -43,7 +43,7 @@ class PingpongController(
     @PostMapping("/score", produces = ["application/json"])
     suspend fun pingpongScore(
         @RequestBody inputScore: Score,
-    ): ResponseEntity<Any?> =
+    ): ResponseEntity<String> =
         resolve(
             f = {
                 inputScore

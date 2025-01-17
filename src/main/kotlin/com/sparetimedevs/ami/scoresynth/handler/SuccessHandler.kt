@@ -26,7 +26,7 @@ import org.springframework.http.ResponseEntity
 suspend inline fun <reified A> handleSuccessWithDefaultHandler(
     jsonParser: Json,
     a: A,
-): Either<Throwable, ResponseEntity<Any?>> =
+): Either<Throwable, ResponseEntity<String>> =
     toJson(jsonParser, a)
         .flatMap { jsonAsString ->
             Either.catch {

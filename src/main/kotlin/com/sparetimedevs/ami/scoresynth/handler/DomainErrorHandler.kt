@@ -29,12 +29,12 @@ import org.springframework.http.ResponseEntity
 suspend fun handleDomainError(
     jsonParser: Json,
     domainError: DomainError,
-): Either<Throwable, ResponseEntity<Any?>> = createResponse(jsonParser, domainError)
+): Either<Throwable, ResponseEntity<String>> = createResponse(jsonParser, domainError)
 
 private suspend fun createResponse(
     jsonParser: Json,
     domainError: DomainError,
-): Either<Throwable, ResponseEntity<Any?>> =
+): Either<Throwable, ResponseEntity<String>> =
     when (domainError) {
         is ParseError -> {
             toJson(jsonParser, domainError.toResponse())

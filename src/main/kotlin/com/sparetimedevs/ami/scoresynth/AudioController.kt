@@ -19,9 +19,6 @@ package com.sparetimedevs.ami.scoresynth
 import arrow.core.Either
 import arrow.core.right
 import com.sparetimedevs.ami.core.DomainError
-import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
-import com.sparetimedevs.ami.scoresynth.handler.handleSuccessWithDefaultHandler
-import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
@@ -45,7 +42,7 @@ class AudioController(
     private val logger: Logger = LoggerFactory.getLogger(AudioController::class.java)
 
     @PostMapping("/audio", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun synthesizeAudio(
+    suspend fun synthesizeAudio(
         @RequestParam("file") inputFile: MultipartFile,
         @RequestParam(value = "fileFormat", required = false) fileFormat: String?,
     ): ResponseEntity<ByteArray> {
@@ -87,45 +84,30 @@ class AudioController(
     @PostMapping("/midi-to-wav", produces = ["application/json"])
     suspend fun midiToWav(
         @RequestBody input: Input,
-    ): ResponseEntity<Any?> =
-        resolve(
-            f = {
-                val fluidSynthPath = "/usr/local/bin/fluidsynth" // Path to FluidSynth executable
-                val soundFontPath = "/Users/joram/temp/soundfont.sf2" // Path to your SoundFont file
+    ): ResponseEntity<String> =
+        resolve(jsonParser, logger) {
+            val fluidSynthPath = "/usr/local/bin/fluidsynth" // Path to FluidSynth executable
+            val soundFontPath = "/Users/joram/temp/soundfont.sf2" // Path to your SoundFont file
 
-                val synthesizer = AudioSynthesizer(fluidSynthPath, soundFontPath)
+            val synthesizer = AudioSynthesizer(fluidSynthPath, soundFontPath)
 
-                try {
-                    // Load MIDI data
-                    val midiData = loadMidiData()
-                    val midiStream = ByteArrayInputStream(midiData)
+            try {
+                // Load MIDI data
+                val midiData = loadMidiData()
+                val midiStream = ByteArrayInputStream(midiData)
 
-                    // Transform MIDI to WAV
-                    val wavData = synthesizer.transformMidiToWav(midiStream)
+                // Transform MIDI to WAV
+                val wavData = synthesizer.transformMidiToWav(midiStream)
 
-                    println("Generated WAV data size: ${wavData.size} bytes")
-                } catch (e: Exception) {
-                    println("Error: ${e.message}")
-                }
+                println("Generated WAV data size: ${wavData.size} bytes")
+            } catch (e: Exception) {
+                println("Error: ${e.message}")
+            }
 
-                input
-                    .validateInput()
-                    .map { a -> Response("The process is completed for: $a") }
-            },
-            success = { a ->
-                handleSuccessWithDefaultHandler(jsonParser, a)
-            },
-            error = { domainError ->
-                handleDomainError(jsonParser, domainError)
-            },
-            throwable = { throwable ->
-                handleSystemFailure(jsonParser, throwable)
-            },
-            unrecoverableState = { throwable ->
-                logger.error("Something horrible happened when GET /score was invoked. The exception is: $throwable")
-                Unit.right()
-            },
-        )
+            input
+                .validateInput()
+                .map { a -> Response("The process is completed for: $a") }
+        }
 }
 
 @Serializable
