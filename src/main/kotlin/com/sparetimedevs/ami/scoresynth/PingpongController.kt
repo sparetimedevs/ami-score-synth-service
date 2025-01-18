@@ -49,6 +49,16 @@ class PingpongController(
                 inputScore
                     .validateInput()
                     .map { score -> ResponseInputScore(score.toInput()) }
+                    .mapLeft { sdkDomainError ->
+                        when (sdkDomainError) {
+                            is com.sparetimedevs.ami.core.ParseError -> ParseError(sdkDomainError.message)
+                            is com.sparetimedevs.ami.core.AccumulatedValidationErrors ->
+                                AccumulatedValidationErrors(
+                                    sdkDomainError.message,
+                                    sdkDomainError.validationErrors,
+                                )
+                        }
+                    }
             },
             success = { a ->
                 handleSuccessWithDefaultHandler(jsonParser, a)

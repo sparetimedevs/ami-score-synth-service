@@ -17,8 +17,10 @@
 package com.sparetimedevs.ami.scoresynth
 
 import arrow.core.Either
+import arrow.core.left
 import arrow.core.right
-import com.sparetimedevs.ami.core.DomainError
+import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
+import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
@@ -41,41 +43,74 @@ class AudioController(
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AudioController::class.java)
 
-    // curl -v -XPOST localhost:8080/audio \
+    // curl -v -o output-123.wav -XPOST 'localhost:8080/audio?inputFileFormat=midi' \
     // --form 'file=@"/Users/joram/temp/heigh_ho_nobody_home.mid"' \
     // --header 'Content-Type: multipart/form-data'
     @PostMapping("/audio", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     suspend fun synthesizeAudio(
         @RequestParam("file") inputFile: MultipartFile,
-        @RequestParam(value = "fileFormat", required = false) fileFormat: String?,
-    ): ResponseEntity<ByteArray> {
-        // Infer file type from Content-Type, query parameter, or file content
-        val format = fileFormat ?: detectFormat(inputFile)
+        @RequestParam(value = "inputFileFormat", required = false) inputFileFormat: String?,
+    ): ResponseEntity<*> =
+        resolve(
+            f = {
+                // Infer file type from Content-Type, query parameter, or file content
+                val format = inputFileFormat ?: detectFormat(inputFile)
 
-        val wavData =
-            when (format.lowercase()) {
-                "midi" -> synthesizeMidiToWav(inputFile.bytes)
-                "score" -> synthesizeScoreToWav(inputFile.bytes)
-                else -> throw IllegalArgumentException("Unsupported file format: $format")
-            }
+                val wavData: Either<DomainError, ByteArray> =
+                    when (format.lowercase()) {
+                        "midi" -> {
+                            val fluidSynthPath = "/usr/local/bin/fluidsynth" // Path to FluidSynth executable
+                            val soundFontPath = "/Users/joram/temp/soundfont.sf2" // Path to your SoundFont file
 
+                            val synthesizer = AudioSynthesizer(fluidSynthPath, soundFontPath)
+
+                            // TODO the transformMidiToWav should be safe and do the catch and return and Either.
+                            Either
+                                .catch { synthesizer.transformMidiToWav(inputFile.inputStream) }
+                                .mapLeft { exception ->
+                                    ExecutionError(exception.message ?: "Unknown error")
+                                }
+                        }
+
+                        "score" -> synthesizeScoreToWav(inputFile.bytes).right()
+                        else ->
+                            IllegalArgumentException("Unsupported file format: $format")
+                                .left()
+                                .mapLeft { exception ->
+                                    ExecutionError(exception.message ?: "Unknown error")
+                                }
+                    }
+
+                wavData
+            },
+            success = { wavData ->
+                handleSuccessHandler(wavData)
+            },
+            error = { domainError ->
+                handleDomainError(jsonParser, domainError)
+            },
+            throwable = { throwable ->
+                handleSystemFailure(jsonParser, throwable)
+            },
+            unrecoverableState = { throwable ->
+                logger.error("Something horrible happened when resolve was invoked. The exception is: $throwable")
+                Unit.right()
+            },
+        )
+
+    private suspend inline fun handleSuccessHandler(wavData: ByteArray): Either<Throwable, ResponseEntity<ByteArray>> {
         // Return WAV file response
         val headers =
             HttpHeaders().apply {
                 contentType = MediaType.parseMediaType("audio/wav")
                 setContentDispositionFormData("attachment", "output.wav")
             }
-        return ResponseEntity(wavData, headers, HttpStatus.OK)
+        return ResponseEntity(wavData, headers, HttpStatus.OK).right()
     }
 
     private fun detectFormat(file: MultipartFile): String {
         // TODO: Implement logic to inspect file contents or Content-Type
         return if (file.originalFilename?.endsWith(".midi") == true) "midi" else "score"
-    }
-
-    private fun synthesizeMidiToWav(midiBytes: ByteArray): ByteArray {
-        // TODO: MIDI-to-WAV conversion logic
-        return byteArrayOf() // Stub
     }
 
     private fun synthesizeScoreToWav(scoreBytes: ByteArray): ByteArray {

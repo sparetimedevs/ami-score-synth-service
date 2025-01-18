@@ -18,9 +18,10 @@ package com.sparetimedevs.ami.scoresynth.handler
 
 import arrow.core.Either
 import arrow.core.flatMap
-import com.sparetimedevs.ami.core.AccumulatedValidationErrors
-import com.sparetimedevs.ami.core.DomainError
-import com.sparetimedevs.ami.core.ParseError
+import com.sparetimedevs.ami.scoresynth.AccumulatedValidationErrors
+import com.sparetimedevs.ami.scoresynth.DomainError
+import com.sparetimedevs.ami.scoresynth.ExecutionError
+import com.sparetimedevs.ami.scoresynth.ParseError
 import com.sparetimedevs.ami.scoresynth.toResponse
 import kotlinx.serialization.json.Json
 import org.springframework.http.MediaType
@@ -50,7 +51,15 @@ private suspend fun createResponse(
                 .flatMap { jsonAsString ->
                     Either.catch {
                         ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(jsonAsString)
-                        throw RuntimeException("BOOM!")
+                    }
+                }
+        }
+
+        is ExecutionError -> {
+            toJson(jsonParser, domainError.toResponse())
+                .flatMap { jsonAsString ->
+                    Either.catch {
+                        ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).body(jsonAsString)
                     }
                 }
         }

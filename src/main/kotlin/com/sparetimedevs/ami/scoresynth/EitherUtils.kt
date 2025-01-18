@@ -19,7 +19,6 @@ package com.sparetimedevs.ami.scoresynth
 import arrow.core.Either
 import arrow.core.flatten
 import arrow.core.right
-import com.sparetimedevs.ami.core.DomainError
 import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
 import com.sparetimedevs.ami.scoresynth.handler.handleSuccessWithDefaultHandler
 import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure

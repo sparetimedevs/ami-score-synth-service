@@ -16,11 +16,27 @@
 
 package com.sparetimedevs.ami.scoresynth
 
-import kotlinx.serialization.Serializable
+import arrow.core.NonEmptyList
+import com.sparetimedevs.ami.core.validation.ValidationError
 
-@Serializable
-data class ErrorResponse(
-    val errorMessage: String,
-)
+sealed interface DomainError {
+    val message: String
+}
 
-fun DomainError.toResponse(): ErrorResponse = ErrorResponse(this.message)
+data class ExecutionError(
+    override val message: String,
+) : DomainError
+
+data class ParseError(
+    override val message: String,
+) : DomainError
+
+// This would be used when we convert
+// a EitherNel<ValidationError, A>
+// into Either<AccumulatedValidationErrors, A>
+// something.validate()
+//   .mapLeft { AccumulatedValidationErrors(validationErrors = it) }
+data class AccumulatedValidationErrors(
+    override val message: String,
+    val validationErrors: NonEmptyList<ValidationError>,
+) : DomainError
