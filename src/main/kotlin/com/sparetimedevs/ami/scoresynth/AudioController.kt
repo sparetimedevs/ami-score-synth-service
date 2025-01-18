@@ -41,6 +41,9 @@ class AudioController(
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AudioController::class.java)
 
+    // curl -v -XPOST localhost:8080/audio \
+    // --form 'file=@"/Users/joram/temp/heigh_ho_nobody_home.mid"' \
+    // --header 'Content-Type: multipart/form-data'
     @PostMapping("/audio", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     suspend fun synthesizeAudio(
         @RequestParam("file") inputFile: MultipartFile,
