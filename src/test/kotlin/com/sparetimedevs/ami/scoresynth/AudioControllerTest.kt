@@ -34,11 +34,13 @@ class AudioControllerTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
+    // TODO write tests for endpoint 'localhost:8080/audio?inputFileFormat=midi'
+
     @Test
     fun `should return success response for valid input`(): Unit =
         runBlocking {
             val validInput = """{ "midi": "sample-midi-data" }"""
-            val expectedResponse = """{"message":"The process is completed for: sample-midi-data"}"""
+            val expectedResponse = """{"message":"Generated WAV data size: 715308 bytes"}"""
 
             // Perform the initial request and retrieve the async result
             val mvcResult =

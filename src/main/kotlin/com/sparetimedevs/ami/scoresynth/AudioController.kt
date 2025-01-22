@@ -17,6 +17,7 @@
 package com.sparetimedevs.ami.scoresynth
 
 import arrow.core.Either
+import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
 import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
@@ -64,12 +65,7 @@ class AudioController(
 
                             val synthesizer = AudioSynthesizer(fluidSynthPath, soundFontPath)
 
-                            // TODO the transformMidiToWav should be safe and do the catch and return and Either.
-                            Either
-                                .catch { synthesizer.transformMidiToWav(inputFile.inputStream) }
-                                .mapLeft { exception ->
-                                    ExecutionError(exception.message ?: "Unknown error")
-                                }
+                            synthesizer.transformMidiToWav(inputFile.inputStream)
                         }
 
                         "score" -> synthesizeScoreToWav(inputFile.bytes).right()
@@ -129,22 +125,24 @@ class AudioController(
 
             val synthesizer = AudioSynthesizer(fluidSynthPath, soundFontPath)
 
-            try {
-                // Load MIDI data
-                val midiData = loadMidiData()
-                val midiStream = ByteArrayInputStream(midiData)
-
-                // Transform MIDI to WAV
-                val wavData = synthesizer.transformMidiToWav(midiStream)
-
-                println("Generated WAV data size: ${wavData.size} bytes")
-            } catch (e: Exception) {
-                println("Error: ${e.message}")
-            }
+            // Load MIDI data
+            val midiData = loadMidiData()
+            val midiStream = ByteArrayInputStream(midiData)
 
             input
                 .validateInput()
-                .map { a -> Response("The process is completed for: $a") }
+                .flatMap { _ ->
+                    synthesizer.transformMidiToWav(midiStream)
+                }.fold(
+                    { domainError ->
+                        logger.warn("Error: $domainError")
+                        domainError.left()
+                    },
+                    { wavData ->
+                        logger.info("Generated WAV data size: ${wavData.size} bytes")
+                        wavData.right()
+                    },
+                ).map { wavData -> Response("Generated WAV data size: ${wavData.size} bytes") }
         }
 }
 
