@@ -27,12 +27,12 @@ import org.springframework.http.ResponseEntity
 suspend fun handleSystemFailure(
     jsonParser: Json,
     throwable: Throwable,
-): Either<Throwable, ResponseEntity<Any?>> = createResponse(jsonParser, throwable)
+): Either<Throwable, ResponseEntity<String>> = createResponse(jsonParser, throwable)
 
 suspend fun createResponse(
     jsonParser: Json,
     throwable: Throwable,
-): Either<Throwable, ResponseEntity<Any?>> =
+): Either<Throwable, ResponseEntity<String>> =
     toJson(jsonParser, ErrorResponse("$THROWABLE_MESSAGE_PREFIX $throwable"))
         .flatMap { jsonAsString ->
             Either.catch {
