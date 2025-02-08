@@ -31,7 +31,7 @@ class BeanConfig {
 
     @Bean
     fun audioSynthesizer(): AudioSynthesizer {
-        val fluidSynthPath = "/usr/local/bin/fluidsynth" // Path to FluidSynth executable
+        val fluidSynthPath = "fluidsynth" // Path to FluidSynth executable
         val soundFontPath = "/Users/joram/temp/soundfont.sf2" // Path to your SoundFont file
         val fluidSynthClient = FluidSynthClientImpl(fluidSynthPath, soundFontPath)
         return AudioSynthesizer(fluidSynthClient)
