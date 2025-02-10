@@ -17,10 +17,14 @@
 package com.sparetimedevs.ami.scoresynth
 
 import kotlinx.serialization.json.Json
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.PropertySource
 
 @Configuration
+@PropertySource("classpath:default.properties")
+@PropertySource(value = ["file:local.properties"], ignoreResourceNotFound = true)
 class BeanConfig {
     @Bean
     fun jsonParser(): Json =
@@ -30,9 +34,10 @@ class BeanConfig {
         }
 
     @Bean
-    fun audioSynthesizer(): AudioSynthesizer {
-        val fluidSynthPath = "fluidsynth" // Path to FluidSynth executable
-        val soundFontPath = "/Users/joram/temp/soundfont.sf2" // Path to your SoundFont file
+    fun audioSynthesizer(
+        @Value("\${fluidsynth.path}") fluidSynthPath: String,
+        @Value("\${soundfont.path}") soundFontPath: String,
+    ): AudioSynthesizer {
         val fluidSynthClient = FluidSynthClientImpl(fluidSynthPath, soundFontPath)
         return AudioSynthesizer(fluidSynthClient)
     }

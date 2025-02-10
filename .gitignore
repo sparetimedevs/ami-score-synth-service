@@ -4,6 +4,9 @@
 ### Spring ###
 HELP.md
 
+### Local application properties ###
+local.properties
+
 ### Gradle ###
 .gradle
 build/

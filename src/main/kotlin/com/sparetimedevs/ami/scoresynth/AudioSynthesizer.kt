@@ -17,8 +17,9 @@
 package com.sparetimedevs.ami.scoresynth
 
 import arrow.core.Either
-import arrow.core.flatMap
+import arrow.core.raise.either
 import java.io.InputStream
+import java.nio.file.Path
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.readBytes
@@ -33,31 +34,48 @@ class AudioSynthesizer(
      * @param midiStream InputStream containing the MIDI data.
      * @return Either<DomainError, ByteArray> containing the generated WAV file data or the error in case of a failure.
      */
-    suspend fun transformMidiToWav(midiStream: InputStream): Either<DomainError, ByteArray> =
-        Either
-            .catch {
-                // Write the MIDI data to a temporary buffer file
-                val midiTempFile = createTempFile("temp-midi", ".mid").apply { deleteIfExists() }
-                midiStream.use { input -> midiTempFile.writeBytes(input.readBytes()) }
+    suspend fun transformMidiToWav(midiStream: InputStream): Either<DomainError, ByteArray> {
+        var midiTempFile: Path? = null
+        var wavTempFile: Path? = null
 
-                // Write the WAV data to a temporary file
-                val wavTempFile = createTempFile("temp-wav", ".wav").apply { deleteIfExists() }
+        val wavDataOrError =
+            either<DomainError, ByteArray> {
+                midiTempFile = createTempFileSafe("temp-midi", ".mid").bind()
+                wavTempFile = createTempFileSafe("temp-wav", ".wav").bind()
 
-                midiTempFile to wavTempFile
-            }.mapLeft { exception ->
-                ExecutionError(exception.message ?: "Unknown error")
-            }.onRight { (midiTempFile, wavTempFile) ->
-                fluidSynthClient.transformMidiToWav(midiTempFile, wavTempFile)
-            }.flatMap { (midiTempFile, wavTempFile) ->
+                Either
+                    .catch {
+                        midiStream.use { input -> midiTempFile.writeBytes(input.readBytes()) }
+                    }.mapLeft { exception ->
+                        ExecutionError(exception.message ?: "Unknown error")
+                    }.bind()
+
+                fluidSynthClient.transformMidiToWav(midiTempFile, wavTempFile).bind()
+
                 Either
                     .catch {
                         // Return the generated WAV data as a byte array
-                        wavTempFile.readBytes().also {
-                            wavTempFile.deleteIfExists() // Clean up the temporary WAV file
-                            midiTempFile.deleteIfExists() // Clean up the temporary MIDI file
-                        }
+                        wavTempFile.readBytes()
                     }.mapLeft { exception ->
                         ExecutionError(exception.message ?: "Unknown error")
-                    }
+                    }.bind()
             }
+
+        // Clean up the temporary files
+        midiTempFile?.deleteIfExists()
+        wavTempFile?.deleteIfExists()
+
+        return wavDataOrError
+    }
 }
+
+private fun createTempFileSafe(
+    prefix: String,
+    suffix: String,
+): Either<ExecutionError, Path> =
+    Either
+        .catch {
+            createTempFile(prefix, suffix).apply { deleteIfExists() }
+        }.mapLeft { exception ->
+            ExecutionError(exception.message ?: "Unknown error")
+        }
