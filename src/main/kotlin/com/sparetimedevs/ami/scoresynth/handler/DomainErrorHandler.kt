@@ -20,9 +20,12 @@ import arrow.core.Either
 import arrow.core.flatMap
 import com.sparetimedevs.ami.scoresynth.AccumulatedValidationErrors
 import com.sparetimedevs.ami.scoresynth.DomainError
+import com.sparetimedevs.ami.scoresynth.EntityNotFound
 import com.sparetimedevs.ami.scoresynth.ExecutionError
 import com.sparetimedevs.ami.scoresynth.InvalidFileFormatError
 import com.sparetimedevs.ami.scoresynth.ParseError
+import com.sparetimedevs.ami.scoresynth.ServiceUnavailable
+import com.sparetimedevs.ami.scoresynth.UnknownError
 import com.sparetimedevs.ami.scoresynth.toResponse
 import kotlinx.serialization.json.Json
 import org.springframework.http.MediaType
@@ -73,4 +76,8 @@ private suspend fun createResponse(
                     }
                 }
         }
+
+        is EntityNotFound -> TODO()
+        is ServiceUnavailable -> TODO()
+        is UnknownError -> TODO()
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.sparetimedevs.ami.scoresynth
+package com.sparetimedevs.ami.scoresynth.healthcheck
 
 import arrow.core.Either
 import arrow.core.flatMap
@@ -22,6 +22,7 @@ import arrow.core.right
 import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
 import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
 import com.sparetimedevs.ami.scoresynth.handler.toJson
+import com.sparetimedevs.ami.scoresynth.resolve
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
@@ -99,7 +100,7 @@ class HealthCheckController(
         val body = mapOf("status" to if (isReady) "UP" else "DOWN")
         return toJson(jsonParser, body)
             .flatMap { jsonAsString ->
-                Either.catch {
+                Either.Companion.catch {
                     ResponseEntity.status(statusCode).contentType(MediaType.APPLICATION_JSON).body(jsonAsString)
                 }
             }

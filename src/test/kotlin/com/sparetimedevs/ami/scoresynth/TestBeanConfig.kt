@@ -16,6 +16,7 @@
 
 package com.sparetimedevs.ami.scoresynth
 
+import com.sparetimedevs.ami.scoresynth.audio.AudioSynthesizer
 import kotlinx.serialization.json.Json
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean

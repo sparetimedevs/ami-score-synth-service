@@ -28,6 +28,10 @@ dependencies {
         // This needs to be excluded, else Spring Boot is still making use of Jackson instead of Kotlinx Serialization.
         exclude("org.springframework.boot", "spring-boot-starter-json")
     }
+    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+    implementation("mysql:mysql-connector-java:8.0.30")
+    implementation("org.flywaydb:flyway-core:11.3.2")
+    implementation("org.flywaydb:flyway-mysql:11.3.2")
     val coroutinesVersion = "1.10.1"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$coroutinesVersion")
@@ -35,9 +39,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     val arrowVersion = "2.0.1"
     implementation("io.arrow-kt:arrow-core:$arrowVersion")
+    implementation("io.arrow-kt:arrow-fx-coroutines:$arrowVersion")
+    implementation("io.arrow-kt:arrow-resilience:$arrowVersion")
     val amiMusicSdkVersion = "0.0.1-SNAPSHOT"
     implementation("com.sparetimedevs.ami:ami-music-sdk-kotlin:$amiMusicSdkVersion")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("io.kotest:kotest-assertions-core:5.6.2")
 }
 
 tasks.withType<KotlinCompile> {

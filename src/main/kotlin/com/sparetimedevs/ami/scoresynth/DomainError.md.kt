@@ -16,8 +16,13 @@
 
 package com.sparetimedevs.ami.scoresynth
 
+import arrow.core.Either
 import arrow.core.NonEmptyList
 import com.sparetimedevs.ami.core.validation.ValidationError
+import com.sparetimedevs.ami.scoresynth.orchestration.ContinuationToken
+import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationCreationError
+import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationError
+import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationRetrievalError
 
 sealed interface DomainError {
     val message: String
@@ -39,3 +44,25 @@ data class AccumulatedValidationErrors(
 data class InvalidFileFormatError(
     override val message: String,
 ) : DomainError
+
+data class EntityNotFound(
+    override val message: String = "Entity not found.",
+) : DomainError
+
+data class ServiceUnavailable(
+    override val message: String = "The service is unavailable.",
+) : DomainError
+
+data class UnknownError(
+    override val message: String = "An unknown error occurred.",
+) : DomainError
+
+fun <A> Either<OrchestrationError, A>.mapLeftToDomainError() =
+    this.mapLeft {
+        when (it) {
+            is ContinuationToken -> UnknownError("Should not be possible at this stage.")
+            is OrchestrationCreationError -> UnknownError("Should not be possible at this stage.")
+            is OrchestrationRetrievalError -> EntityNotFound(it.reason)
+            else -> UnknownError("Something went wrong, ${it.reason}")
+        }
+    }

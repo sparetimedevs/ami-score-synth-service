@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.sparetimedevs.ami.scoresynth
+package com.sparetimedevs.ami.scoresynth.healthcheck
 
+import com.sparetimedevs.ami.scoresynth.TestBeanConfig
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,9 +25,8 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
 @WebMvcTest(HealthCheckController::class)
 @Import(TestBeanConfig::class)
@@ -43,9 +43,9 @@ class HealthCheckControllerTest {
                     .andReturn()
 
             mockMvc
-                .perform(asyncDispatch(mvcResult))
-                .andExpect(status().isOk())
-                .andExpect(content().json("""{ "status": "ALIVE" }"""))
+                .perform(MockMvcRequestBuilders.asyncDispatch(mvcResult))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json("""{ "status": "ALIVE" }"""))
         }
 
     @Test
@@ -57,8 +57,8 @@ class HealthCheckControllerTest {
                     .andReturn()
 
             mockMvc
-                .perform(asyncDispatch(mvcResult))
-                .andExpect(status().isServiceUnavailable())
-                .andExpect(content().json("""{ "status": "DOWN" }"""))
+                .perform(MockMvcRequestBuilders.asyncDispatch(mvcResult))
+                .andExpect(MockMvcResultMatchers.status().isServiceUnavailable())
+                .andExpect(MockMvcResultMatchers.content().json("""{ "status": "DOWN" }"""))
         }
 }

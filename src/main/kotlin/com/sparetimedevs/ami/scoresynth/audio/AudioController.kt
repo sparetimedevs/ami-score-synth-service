@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package com.sparetimedevs.ami.scoresynth
+package com.sparetimedevs.ami.scoresynth.audio
 
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import com.sparetimedevs.ami.scoresynth.DomainError
+import com.sparetimedevs.ami.scoresynth.InvalidFileFormatError
+import com.sparetimedevs.ami.scoresynth.banana.AsyncReply
+import com.sparetimedevs.ami.scoresynth.banana.handleSuccessWithAsyncReply
 import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
 import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
+import com.sparetimedevs.ami.scoresynth.orchestration.Orchestration
+import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationId
+import com.sparetimedevs.ami.scoresynth.resolve
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -29,22 +36,25 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayOutputStream
+import java.util.UUID
 
 @RestController
+@RequestMapping("/audio")
 class AudioController(
     private val jsonParser: Json,
     private val synthesizer: AudioSynthesizer,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AudioController::class.java)
 
-    // curl -v -o output-123.wav -XPOST 'localhost:8080/audio?inputFileFormat=midi' \
+    // curl -v -o output-123.wav -XPOST 'localhost:8080/audio/synthesize?inputFileFormat=midi' \
     // --form 'file=@"/Users/joram/temp/heigh_ho_nobody_home.mid"' \
     // --header 'Content-Type: multipart/form-data'
-    @PostMapping("/audio", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @PostMapping("/synthesize", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     suspend fun synthesizeAudio(
         @RequestParam("file") inputFile: MultipartFile,
         @RequestParam(value = "inputFileFormat", required = false) inputFileFormat: String?,
@@ -78,6 +88,47 @@ class AudioController(
                 Unit.right()
             },
         )
+
+    // curl -v -o output-123.wav -XPOST 'localhost:8080/audio/synthesize/async?inputFileFormat=midi' \
+    // --form 'file=@"/Users/joram/temp/heigh_ho_nobody_home.mid"' \
+    // --header 'Content-Type: multipart/form-data'
+    @PostMapping("/synthesize/async", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    suspend fun synthesizeAudioAsync(
+        @RequestParam("file") inputFile: MultipartFile,
+        @RequestParam(value = "inputFileFormat", required = false) inputFileFormat: String?,
+    ): ResponseEntity<*> =
+        resolve(
+            f = {
+                // Infer file type from Content-Type, query parameter, or file content
+                val format = inputFileFormat ?: detectFormat(inputFile)
+
+                val wavData: Either<DomainError, ByteArray> =
+                    when (format.lowercase()) {
+                        "midi" -> synthesizer.transformMidiToWav(inputFile.inputStream)
+                        "score" -> synthesizeScoreToWav(inputFile.bytes).right()
+                        else ->
+                            InvalidFileFormatError("Unsupported file format: $format").left()
+                    }
+
+                wavData
+                Orchestration(OrchestrationId(UUID.randomUUID()), "audio", "inputAudio", "done", "resultAudio").right()
+            },
+            success = { orchestration ->
+                handleSuccessWithAsyncReply(jsonParser, orchestration.id.toAsyncReply())
+            },
+            error = { domainError ->
+                handleDomainError(jsonParser, domainError)
+            },
+            throwable = { throwable ->
+                handleSystemFailure(jsonParser, throwable)
+            },
+            unrecoverableState = { throwable ->
+                logger.error("Something horrible happened when resolve was invoked. The exception is: $throwable")
+                Unit.right()
+            },
+        )
+
+    private fun OrchestrationId.toAsyncReply() = AsyncReply(replyUrl = "http://localhost:8080/replies/${this.value}")
 
     private suspend inline fun handleSuccessHandler(wavData: ByteArray): Either<Throwable, ResponseEntity<ByteArray>> {
         // Return WAV file response

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.sparetimedevs.ami.scoresynth
+package com.sparetimedevs.ami.scoresynth.audio
 
+import com.sparetimedevs.ami.scoresynth.TestBeanConfig
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,9 +26,7 @@ import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import java.io.InputStream
 
 @WebMvcTest(AudioController::class)
@@ -51,16 +50,16 @@ class AudioControllerTest {
                 mockMvc
                     .perform(
                         MockMvcRequestBuilders
-                            .multipart("/audio")
+                            .multipart("/audio/synthesize")
                             .file(multipartFile)
                             .param("inputFileFormat", "midi")
                             .contentType(MediaType.MULTIPART_FORM_DATA),
                     ).andReturn()
 
             mockMvc
-                .perform(asyncDispatch(mvcResult))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("audio/wav"))
+                .perform(MockMvcRequestBuilders.asyncDispatch(mvcResult))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType("audio/wav"))
                 .andExpect { result ->
                     val bytes = result.response.contentAsByteArray
                     assert(bytes.isNotEmpty()) { "Response content is empty" }
@@ -77,16 +76,18 @@ class AudioControllerTest {
                 mockMvc
                     .perform(
                         MockMvcRequestBuilders
-                            .multipart("/audio")
+                            .multipart("/audio/synthesize")
                             .file(multipartFile)
                             .param("inputFileFormat", "txt")
                             .contentType(MediaType.MULTIPART_FORM_DATA),
                     ).andReturn()
 
             mockMvc
-                .perform(asyncDispatch(mvcResult))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().json("""{ "errorMessage": "Unsupported file format: txt" }"""))
+                .perform(MockMvcRequestBuilders.asyncDispatch(mvcResult))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(
+                    MockMvcResultMatchers.content().json("""{ "errorMessage": "Unsupported file format: txt" }"""),
+                )
         }
 
     @Test
@@ -95,10 +96,10 @@ class AudioControllerTest {
             mockMvc
                 .perform(
                     MockMvcRequestBuilders
-                        .multipart("/audio")
+                        .multipart("/audio/synthesize")
                         .param("inputFileFormat", "midi")
                         .contentType(MediaType.MULTIPART_FORM_DATA),
-                ).andExpect(status().isBadRequest())
-                .andExpect(content().string(""))
+                ).andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.content().string(""))
         }
 }

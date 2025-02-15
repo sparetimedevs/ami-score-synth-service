@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.sparetimedevs.ami.scoresynth
+package com.sparetimedevs.ami.scoresynth.audio
 
 import arrow.core.Either
 import arrow.core.raise.either
+import com.sparetimedevs.ami.scoresynth.DomainError
+import com.sparetimedevs.ami.scoresynth.ExecutionError
+import com.sparetimedevs.ami.scoresynth.FluidSynthClient
 import java.io.InputStream
 import java.nio.file.Path
 import kotlin.io.path.createTempFile
@@ -43,7 +46,7 @@ class AudioSynthesizer(
                 midiTempFile = createTempFileSafe("temp-midi", ".mid").bind()
                 wavTempFile = createTempFileSafe("temp-wav", ".wav").bind()
 
-                Either
+                Either.Companion
                     .catch {
                         midiStream.use { input -> midiTempFile.writeBytes(input.readBytes()) }
                     }.mapLeft { exception ->
@@ -52,7 +55,7 @@ class AudioSynthesizer(
 
                 fluidSynthClient.transformMidiToWav(midiTempFile, wavTempFile).bind()
 
-                Either
+                Either.Companion
                     .catch {
                         // Return the generated WAV data as a byte array
                         wavTempFile.readBytes()
