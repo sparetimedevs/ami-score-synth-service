@@ -53,8 +53,8 @@ class ReplyController(
             f = {
                 validateOrchestrationId(uuid)
                     .toEitherAccumulatedValidationErrorsOrA()
-                    .flatMap { orchestratorId ->
-                        orchestrator.orchestrationState(orchestratorId)
+                    .flatMap { orchestrationId ->
+                        orchestrator.orchestrationState(orchestrationId)
                     }.mapLeftToDomainError()
             },
             success = { orchestration ->

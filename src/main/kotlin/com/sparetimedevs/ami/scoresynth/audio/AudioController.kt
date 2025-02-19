@@ -25,8 +25,9 @@ import com.sparetimedevs.ami.scoresynth.banana.AsyncReply
 import com.sparetimedevs.ami.scoresynth.banana.handleSuccessWithAsyncReply
 import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
 import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
-import com.sparetimedevs.ami.scoresynth.orchestration.Orchestration
+import com.sparetimedevs.ami.scoresynth.mapLeftToDomainError
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationId
+import com.sparetimedevs.ami.scoresynth.orchestration.Orchestrator
 import com.sparetimedevs.ami.scoresynth.resolve
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
@@ -41,13 +42,13 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayOutputStream
-import java.util.UUID
 
 @RestController
 @RequestMapping("/audio")
 class AudioController(
     private val jsonParser: Json,
     private val synthesizer: AudioSynthesizer,
+    private val orchestrator: Orchestrator<InputFile, OutputFile>,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AudioController::class.java)
 
@@ -89,7 +90,7 @@ class AudioController(
             },
         )
 
-    // curl -v -o output-123.wav -XPOST 'localhost:8080/audio/synthesize/async?inputFileFormat=midi' \
+    // curl -v -XPOST 'localhost:8080/audio/synthesize/async?inputFileFormat=midi' \
     // --form 'file=@"/Users/joram/temp/heigh_ho_nobody_home.mid"' \
     // --header 'Content-Type: multipart/form-data'
     @PostMapping("/synthesize/async", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
@@ -102,16 +103,20 @@ class AudioController(
                 // Infer file type from Content-Type, query parameter, or file content
                 val format = inputFileFormat ?: detectFormat(inputFile)
 
-                val wavData: Either<DomainError, ByteArray> =
-                    when (format.lowercase()) {
-                        "midi" -> synthesizer.transformMidiToWav(inputFile.inputStream)
-                        "score" -> synthesizeScoreToWav(inputFile.bytes).right()
-                        else ->
-                            InvalidFileFormatError("Unsupported file format: $format").left()
-                    }
+//                val wavData: Either<DomainError, ByteArray> =
+//                    when (format.lowercase()) {
+//                        "midi" -> synthesizer.transformMidiToWav(inputFile.inputStream)
+//                        "score" -> synthesizeScoreToWav(inputFile.bytes).right()
+//                        else ->
+//                            InvalidFileFormatError("Unsupported file format: $format").left()
+//                    }
+//
+//                wavData
 
-                wavData
-                Orchestration(OrchestrationId(UUID.randomUUID()), "audio", "inputAudio", "done", "resultAudio").right()
+                val inputFile = InputFile("some/input.file")
+                orchestrator
+                    .registerOrchestration(inputFile)
+                    .mapLeftToDomainError()
             },
             success = { orchestration ->
                 handleSuccessWithAsyncReply(jsonParser, orchestration.id.toAsyncReply())

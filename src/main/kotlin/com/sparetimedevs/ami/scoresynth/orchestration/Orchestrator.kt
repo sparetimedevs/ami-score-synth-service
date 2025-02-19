@@ -83,7 +83,7 @@ abstract class Orchestrator<Input : Any, Result : Any>(
 
         suspend inline fun <reified B> orchestrationStep(
             stepName: String,
-            noinline step: () -> Either<OrchestrationStepFailure, B>,
+            noinline step: suspend () -> Either<OrchestrationStepFailure, B>,
         ): B {
             val persistedStep: Either<OrchestrationStepFailure, B> =
                 persistOrchestrationStep(orchestrationId, stepName, step)
@@ -97,7 +97,7 @@ abstract class Orchestrator<Input : Any, Result : Any>(
         protected suspend inline fun <reified A> persistOrchestrationStep(
             orchestrationId: OrchestrationId,
             stepName: String,
-            step: () -> Either<OrchestrationStepFailure, A>,
+            step: suspend () -> Either<OrchestrationStepFailure, A>,
         ): Either<OrchestrationStepFailure, A> =
             createTypeSafely<A>()
                 .flatMap { type ->
