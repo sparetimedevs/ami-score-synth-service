@@ -20,19 +20,20 @@ import arrow.core.Either
 import com.sparetimedevs.ami.scoresynth.orchestration.InternalOrchestrationStepFailure
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.createType
+import kotlin.reflect.typeOf
 
-// TODO write unit tests for this, also to show case that something with a list doesn't work
 inline fun <reified A> createTypeSafely(): Either<InternalOrchestrationStepFailure, KType> =
     Either
-        .catch { A::class.createType() }
+        .catch { A::class.createType(arguments = getTypeProjections<A>()) }
         .mapLeft {
             InternalOrchestrationStepFailure(
                 "Something went wrong! Tried to create a KType instance but exception was thrown with message: ${it.message}",
             )
         }
 
-// TODO write unit tests for this, also to show case that something with a list doesn't work
+// This function does not work for a type which has type parameters.
 fun KClass<*>.createTypeSafely(): Either<InternalOrchestrationStepFailure, KType> =
     Either
         .catch { this.createType() }
@@ -41,3 +42,9 @@ fun KClass<*>.createTypeSafely(): Either<InternalOrchestrationStepFailure, KType
                 "Something went wrong! Tried to create a KType instance but exception was thrown with message: ${it.message}",
             )
         }
+
+inline fun <reified A> getTypeProjections(): List<KTypeProjection> {
+    val kType = typeOf<A>()
+    val arguments: List<KTypeProjection> = kType.arguments
+    return arguments
+}
