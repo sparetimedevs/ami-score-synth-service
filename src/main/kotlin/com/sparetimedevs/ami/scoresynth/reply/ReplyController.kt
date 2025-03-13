@@ -30,7 +30,6 @@ import com.sparetimedevs.ami.scoresynth.orchestration.validation.validateOrchest
 import com.sparetimedevs.ami.scoresynth.resolve
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -42,7 +41,7 @@ class ReplyController(
     private val jsonParser: Json,
     private val orchestrator: Orchestrator<String, String>,
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(ReplyController::class.java)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     // curl -v localhost:8080/replies/{uuid}
     @GetMapping("/replies/{uuid}")

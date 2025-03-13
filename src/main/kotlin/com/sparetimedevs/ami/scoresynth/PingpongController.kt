@@ -25,7 +25,6 @@ import com.sparetimedevs.ami.scoresynth.handler.handleSuccessWithDefaultHandler
 import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -37,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController
 class PingpongController(
     private val jsonParser: Json,
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(PingpongController::class.java)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     // curl -v -XPOST localhost:8080/score -H "Content-Type: application/json" -d '{"id":"d737b4ae-fbaa-4b0d-9d36-d3651e30e93a","parts":[{"id":"p-1","name":"Part one","instrument":{"name":"Grand Piano","midiChannel":0,"midiProgram":1},"measures":[{"notes":[{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"C","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"G","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"A","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"E","alter":0,"octave":4},"noteAttributes":{}}]},{"notes":[{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"C","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"C","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"A","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"A","alter":0,"octave":4},"noteAttributes":{}}]}]},{"id":"p-2","name":"Part two","instrument":{"name":"Overdriven Guitar","midiChannel":1,"midiProgram":30},"measures":[{"notes":[{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"C","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"G","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"A","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"E","alter":0,"octave":4},"noteAttributes":{}}]},{"notes":[{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"C","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"C","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"A","alter":0,"octave":4},"noteAttributes":{}},{"duration":{"noteValue":"QUARTER","modifier":"NONE"},"pitch":{"noteName":"A","alter":0,"octave":4},"noteAttributes":{}}]}]}]}'
     @PostMapping("/score", produces = ["application/json"])

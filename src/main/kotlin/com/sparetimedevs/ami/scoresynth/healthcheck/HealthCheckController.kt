@@ -25,7 +25,6 @@ import com.sparetimedevs.ami.scoresynth.handler.toJson
 import com.sparetimedevs.ami.scoresynth.resolve
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -39,7 +38,7 @@ import java.time.Instant
 class HealthCheckController(
     private val jsonParser: Json,
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(HealthCheckController::class.java)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     @GetMapping
     fun generalHealthCheck(): ResponseEntity<HealthResponse> {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.sparetimedevs.ami.scoresynth.banana
+package com.sparetimedevs.ami.scoresynth.harmonization
 
 import arrow.core.Either
 import arrow.core.flatMap
@@ -32,33 +32,26 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
-// Banana driven development.
-// TODO throw this away when happy with HarmonizationController.
 @RestController
-class BananaController(
+class HarmonizationController(
     private val jsonParser: Json,
     private val orchestrator: Orchestrator<String, String>,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    // curl -v localhost:8080/bananas
-    @GetMapping("/bananas")
-    suspend fun all(): List<Banana> = listOf(Banana("a", "b"), Banana("c", "d"))
-
-    // curl -v -X POST localhost:8080/bananas -H 'Content-type:application/json' -d '{"x": "The X", "y": "The Y"}'
-    @PostMapping("/bananas")
-    suspend fun newBanana(
-        @RequestBody newBanana: Banana,
+    // curl -v -X POST localhost:8080/harmonize -H 'Content-type:application/json' -d '{"x": "The X", "y": "The Y"}'
+    @PostMapping("/harmonize")
+    suspend fun harmonize(
+        @RequestBody harmonizationRequest: HarmonizationRequest,
     ): ResponseEntity<String> =
         resolve(
             f = {
                 orchestrator
-                    .registerOrchestration(newBanana.x)
+                    .registerOrchestration(harmonizationRequest.x)
                     .mapLeftToDomainError()
             },
             success = { orchestration ->
@@ -80,7 +73,7 @@ class BananaController(
 }
 
 @Serializable
-data class Banana(
+data class HarmonizationRequest(
     val x: String,
     val y: String,
 )

@@ -30,7 +30,6 @@ import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationId
 import com.sparetimedevs.ami.scoresynth.orchestration.Orchestrator
 import com.sparetimedevs.ami.scoresynth.resolve
 import kotlinx.serialization.json.Json
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -50,7 +49,7 @@ class AudioController(
     private val synthesizer: AudioSynthesizer,
     private val orchestrator: Orchestrator<InputFile, OutputFile>,
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(AudioController::class.java)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     // curl -v -o output-123.wav -XPOST 'localhost:8080/audio/synthesize?inputFileFormat=midi' \
     // --form 'file=@"/Users/joram/temp/heigh_ho_nobody_home.mid"' \
