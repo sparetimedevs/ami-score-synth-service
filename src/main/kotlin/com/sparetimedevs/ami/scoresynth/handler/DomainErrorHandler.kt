@@ -28,6 +28,7 @@ import com.sparetimedevs.ami.scoresynth.ServiceUnavailable
 import com.sparetimedevs.ami.scoresynth.UnknownError
 import com.sparetimedevs.ami.scoresynth.toResponse
 import kotlinx.serialization.json.Json
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 
@@ -41,6 +42,8 @@ private suspend fun createResponse(
     domainError: DomainError,
 ): Either<Throwable, ResponseEntity<String>> =
     when (domainError) {
+        // 400
+
         is ParseError -> {
             toJson(jsonParser, domainError.toResponse())
                 .flatMap { jsonAsString ->
@@ -68,6 +71,22 @@ private suspend fun createResponse(
                 }
         }
 
+        // 404
+
+        is EntityNotFound -> {
+            toJson(jsonParser, domainError.toResponse())
+                .flatMap { jsonAsString ->
+                    Either.catch {
+                        ResponseEntity
+                            .status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(jsonAsString)
+                    }
+                }
+        }
+
+        // 500
+
         is ExecutionError -> {
             toJson(jsonParser, domainError.toResponse())
                 .flatMap { jsonAsString ->
@@ -77,7 +96,26 @@ private suspend fun createResponse(
                 }
         }
 
-        is EntityNotFound -> TODO()
-        is ServiceUnavailable -> TODO()
-        is UnknownError -> TODO()
+        is UnknownError -> {
+            toJson(jsonParser, domainError.toResponse())
+                .flatMap { jsonAsString ->
+                    Either.catch {
+                        ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).body(jsonAsString)
+                    }
+                }
+        }
+
+        // 503
+
+        is ServiceUnavailable -> {
+            toJson(jsonParser, domainError.toResponse())
+                .flatMap { jsonAsString ->
+                    Either.catch {
+                        ResponseEntity
+                            .status(HttpStatus.SERVICE_UNAVAILABLE)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(jsonAsString)
+                    }
+                }
+        }
     }

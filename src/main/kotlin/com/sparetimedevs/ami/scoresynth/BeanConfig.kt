@@ -20,7 +20,6 @@ import com.sparetimedevs.ami.scoresynth.audio.AudioSynthesisOrchestrator
 import com.sparetimedevs.ami.scoresynth.audio.AudioSynthesizer
 import com.sparetimedevs.ami.scoresynth.audio.FileHandler
 import com.sparetimedevs.ami.scoresynth.audio.InputFile
-import com.sparetimedevs.ami.scoresynth.audio.OutputFile
 import com.sparetimedevs.ami.scoresynth.orchestration.MyOrchestrator
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationRepository
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationStepRepository
@@ -43,11 +42,42 @@ import javax.sql.DataSource
 @PropertySource(value = ["file:local.properties"], ignoreResourceNotFound = true)
 class BeanConfig {
     @Bean
+    fun clock(): Clock = Clock.systemUTC()
+
+    @Bean
     fun jsonParser(): Json =
         Json {
             prettyPrint = true
             encodeDefaults = true
         }
+
+    @Bean
+    fun dataSource(
+        @Value("\${spring.datasource.url}") dataSourceUrl: String,
+        @Value("\${spring.datasource.username}") dataSourceUsername: String,
+        @Value("\${spring.datasource.password}") dataSourcePassword: String,
+    ): DataSource {
+        val dataSourceProperties =
+            DataSourceProperties(
+                url = dataSourceUrl,
+                username = dataSourceUsername,
+                password = dataSourcePassword,
+            )
+        return createDataSource(dataSourceProperties)
+    }
+
+    @Bean
+    fun orchestrationRepository(
+        dataSource: DataSource,
+        jsonParser: Json,
+        clock: Clock,
+    ): OrchestrationRepository = OrchestrationRepositoryImpl(dataSource, clock, jsonParser)
+
+    @Bean
+    fun orchestrationStepRepository(
+        dataSource: DataSource,
+        jsonParser: Json,
+    ): OrchestrationStepRepository = OrchestrationStepRepositoryImpl(dataSource, jsonParser)
 
     @Bean
     fun audioSynthesizer(
@@ -60,24 +90,9 @@ class BeanConfig {
 
     @Bean
     fun myOrchestrator(
-        @Value("\${spring.datasource.url}") dataSourceUrl: String,
-        @Value("\${spring.datasource.username}") dataSourceUsername: String,
-        @Value("\${spring.datasource.password}") dataSourcePassword: String,
+        orchestrationRepository: OrchestrationRepository,
+        orchestrationStepRepository: OrchestrationStepRepository,
     ): Orchestrator<String, String> {
-        val dataSourceProperties =
-            DataSourceProperties(
-                url = dataSourceUrl,
-                username = dataSourceUsername,
-                password = dataSourcePassword,
-            )
-
-        val dataSource = createDataSource(dataSourceProperties)
-        val clock: Clock = Clock.systemUTC()
-        val jsonParser: Json = Json
-        val orchestrationRepository: OrchestrationRepository =
-            OrchestrationRepositoryImpl(dataSource, clock, jsonParser)
-        val orchestrationStepRepository: OrchestrationStepRepository =
-            OrchestrationStepRepositoryImpl(dataSource, jsonParser)
         val myOrchestrator = MyOrchestrator(orchestrationRepository, orchestrationStepRepository)
         val myOrchestratorJobScheduler = OrchestratorJobScheduler(myOrchestrator, String::class)
 
@@ -85,33 +100,21 @@ class BeanConfig {
     }
 
     @Bean
+    fun fileHandler(): FileHandler = FileHandler()
+
+    @Bean
     fun audioSynthesisOrchestrator(
-        @Value("\${spring.datasource.url}") dataSourceUrl: String,
-        @Value("\${spring.datasource.username}") dataSourceUsername: String,
-        @Value("\${spring.datasource.password}") dataSourcePassword: String,
-    ): Orchestrator<InputFile, OutputFile> {
-        val dataSourceProperties =
-            DataSourceProperties(
-                url = dataSourceUrl,
-                username = dataSourceUsername,
-                password = dataSourcePassword,
-            )
-
-        val dataSource = createDataSource(dataSourceProperties)
-        val clock: Clock = Clock.systemUTC()
-        val jsonParser: Json = Json
-        // TODO the should not be a reason to create two orchestrationRepositories
-        val orchestrationRepository: OrchestrationRepository =
-            OrchestrationRepositoryImpl(dataSource, clock, jsonParser)
-        val orchestrationStepRepository: OrchestrationStepRepository =
-            OrchestrationStepRepositoryImpl(dataSource, jsonParser)
-
+        orchestrationRepository: OrchestrationRepository,
+        orchestrationStepRepository: OrchestrationStepRepository,
+        fileHandler: FileHandler,
+        audioSynthesizer: AudioSynthesizer,
+    ): AudioSynthesisOrchestrator {
         val audioSynthesisOrchestrator =
             AudioSynthesisOrchestrator(
                 orchestrationRepository,
                 orchestrationStepRepository,
-                FileHandler(),
-                AudioSynthesizer(FluidSynthClientImpl("fluidsynthPath", "soundFontPath")),
+                fileHandler,
+                audioSynthesizer,
             )
         val audioSynthesisOrchestratorJobScheduler =
             OrchestratorJobScheduler(audioSynthesisOrchestrator, InputFile::class)

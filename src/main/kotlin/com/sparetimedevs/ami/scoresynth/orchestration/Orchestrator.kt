@@ -76,7 +76,7 @@ abstract class Orchestrator<Input : Any, Result : Any>(
                 orchestrationRepository.findById(orchestrationId, inputType, resultType)
             }
 
-    protected abstract class OrchestrationEitherEffect2<A> : Effect<Either<OrchestrationError, A>> {
+    protected abstract class OrchestrationEitherEffect<A> : Effect<Either<OrchestrationError, A>> {
         abstract val orchestrationId: OrchestrationId
 
         abstract val orchestrationStepRepository: OrchestrationStepRepository
@@ -125,11 +125,11 @@ abstract class Orchestrator<Input : Any, Result : Any>(
      * This is very much inspired by either block implementation, see: /arrow/core/computations/EitherEffect.class
      */
     protected suspend inline fun <reified A> OrchestrationId.orchestration(
-        crossinline c: suspend OrchestrationEitherEffect2<A>.() -> A,
+        crossinline c: suspend OrchestrationEitherEffect<A>.() -> A,
     ): Either<OrchestrationError, A> {
         val orchestrationResult =
             Effect.suspended(eff = { delimitedScope: DelimitedScope<Either<OrchestrationError, A>> ->
-                OrchestrationEitherEffect2Impl(
+                OrchestrationEitherEffectImpl(
                     delimitedScope,
                     this,
                     orchestrationStepRepository,
@@ -141,11 +141,11 @@ abstract class Orchestrator<Input : Any, Result : Any>(
             }
     }
 
-    protected class OrchestrationEitherEffect2Impl<A>(
+    protected class OrchestrationEitherEffectImpl<A>(
         private val delimitedScope: DelimitedScope<Either<OrchestrationError, A>>,
         override val orchestrationId: OrchestrationId,
         override val orchestrationStepRepository: OrchestrationStepRepository,
-    ) : OrchestrationEitherEffect2<A>() {
+    ) : OrchestrationEitherEffect<A>() {
         override fun control(): DelimitedScope<Either<OrchestrationError, A>> = delimitedScope
     }
 

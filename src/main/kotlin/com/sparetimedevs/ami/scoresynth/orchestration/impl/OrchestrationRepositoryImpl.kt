@@ -158,7 +158,8 @@ class OrchestrationRepositoryImpl(
         orchestrationName: String,
         inputType: KType,
     ): Either<OrchestrationError, List<Orchestration<Input, Result>>> {
-        // To determine for which orchestrations the orchestrate method should be called, the database needs to be queried.
+        // To determine for which orchestrations the orchestrate method should be called, the database needs to be
+        // queried.
         // In this query, an exponential backoff could be incorporated.
         // Something like: there are 5 tries. Then take all orchestrations with one try.
         // If room left, take 10 (? or more) with 2 tries which are older than 15 seconds.
@@ -167,9 +168,10 @@ class OrchestrationRepositoryImpl(
         // If room left, take 10 (? or more) with 5 tries which are older than 120 seconds.
         // Probably this needs to be tuned accordingly. And maybe even configurable per use case.
         // Also think about backpressure. Only take work if the system can handle the work.
-        // Maybe the solution is to take oldest always first. Then if the system gets more requests, it will just take a little longer to process them, but eventually the system will go through them all.
+        // Maybe the solution is to take oldest always first. Then, if the system gets more requests, it will just take
+        // a little longer to process them, but eventually the system will go through them all.
 
-        val sql = "SELECT * FROM orchestrations WHERE name = ? AND state != 'completed'" // TODO AND name = ?
+        val sql = "SELECT * FROM orchestrations WHERE name = ? AND state != 'completed'"
         return Either
             .catch { withContext(Dispatchers.IO) { jdbcTemplate.queryForList(sql, orchestrationName) } }
             .fold(

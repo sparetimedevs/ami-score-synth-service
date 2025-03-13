@@ -27,7 +27,6 @@ import com.sparetimedevs.ami.scoresynth.handler.handleDomainError
 import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
 import com.sparetimedevs.ami.scoresynth.mapLeftToDomainError
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationId
-import com.sparetimedevs.ami.scoresynth.orchestration.Orchestrator
 import com.sparetimedevs.ami.scoresynth.resolve
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -47,7 +46,7 @@ import java.io.ByteArrayOutputStream
 class AudioController(
     private val jsonParser: Json,
     private val synthesizer: AudioSynthesizer,
-    private val orchestrator: Orchestrator<InputFile, OutputFile>,
+    private val orchestrator: AudioSynthesisOrchestrator,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
