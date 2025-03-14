@@ -30,7 +30,7 @@ import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationStepRepositor
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationStepRetrievalFailure
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationValidationError
 import com.sparetimedevs.ami.scoresynth.orchestration.UnknownInternalOrchestrationStepFailure
-import com.sparetimedevs.ami.scoresynth.orchestration.util.toEitherAccumulatedValidationErrorsOrA
+import com.sparetimedevs.ami.scoresynth.orchestration.util.asEitherWithAccumulatedValidationErrors
 import com.sparetimedevs.ami.scoresynth.orchestration.validation.validateOrchestrationStep
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -138,7 +138,7 @@ class OrchestrationStepRepositoryImpl(
                         Either<NonEmptyList<OrchestrationValidationError>, OrchestrationStep>?,
                     ->
                     maybeValidatedOrchestrationStep
-                        ?.toEitherAccumulatedValidationErrorsOrA()
+                        ?.asEitherWithAccumulatedValidationErrors()
                         ?.mapLeft { OrchestrationStepRetrievalFailure(it.reason) }
                         ?: OrchestrationStepRetrievalFailure(
                             "Could not find orchestration step with orchestration id $orchestrationId in database.",

@@ -32,7 +32,7 @@ import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationRepository
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationRetrievalError
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationValidationError
 import com.sparetimedevs.ami.scoresynth.orchestration.UnknownOrchestrationError
-import com.sparetimedevs.ami.scoresynth.orchestration.util.toEitherAccumulatedValidationErrorsOrA
+import com.sparetimedevs.ami.scoresynth.orchestration.util.asEitherWithAccumulatedValidationErrors
 import com.sparetimedevs.ami.scoresynth.orchestration.validation.validateOrchestration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -148,7 +148,7 @@ class OrchestrationRepositoryImpl(
                         Either<NonEmptyList<OrchestrationValidationError>, Orchestration<Input, Result>>?,
                     ->
                     maybeValidatedOrchestration
-                        ?.toEitherAccumulatedValidationErrorsOrA()
+                        ?.asEitherWithAccumulatedValidationErrors()
                         ?: OrchestrationRetrievalError("Could not find orchestration with id $id in database.").left()
                 },
             )
@@ -191,7 +191,7 @@ class OrchestrationRepositoryImpl(
                                 inputType,
                             )
                         }.sequence()
-                        .toEitherAccumulatedValidationErrorsOrA()
+                        .asEitherWithAccumulatedValidationErrors()
                 },
             )
     }

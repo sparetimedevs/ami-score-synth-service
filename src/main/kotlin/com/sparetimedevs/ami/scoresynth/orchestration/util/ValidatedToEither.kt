@@ -17,19 +17,20 @@
 package com.sparetimedevs.ami.scoresynth.orchestration.util
 
 import arrow.core.Either
-import arrow.core.NonEmptyList
+import arrow.core.EitherNel
 import com.sparetimedevs.ami.scoresynth.orchestration.AccumulatedOrchestrationValidationErrors
 import com.sparetimedevs.ami.scoresynth.orchestration.OrchestrationValidationError
 
-fun <A> Either<NonEmptyList<OrchestrationValidationError>, A>.toEitherAccumulatedValidationErrorsOrA(
-    accumulatedValidationErrorsMessage: String = "There were one or more errors while validating the input.",
-): Either<AccumulatedOrchestrationValidationErrors, A> =
-    this
-        .mapLeft {
-            AccumulatedOrchestrationValidationErrors(
-                reason = accumulatedValidationErrorsMessage,
-                validationErrors = it,
-            )
-        }
-// TODO might be replaced with asEitherWithAccumulatedValidationErrors() from ami music sdk core
-// Or at least more in line. (This one is specific to OrchestrationValidationErrors)
+const val ACCUMULATED_VALIDATION_ERRORS_MESSAGE_PREFIX: String =
+    "There were one or more errors while validating the input: "
+
+fun <A> EitherNel<OrchestrationValidationError, A>.asEitherWithAccumulatedValidationErrors():
+    Either<AccumulatedOrchestrationValidationErrors, A> =
+    this.mapLeft {
+        AccumulatedOrchestrationValidationErrors(
+            reason =
+                ACCUMULATED_VALIDATION_ERRORS_MESSAGE_PREFIX +
+                    it.map { validationError -> validationError.reason }.joinToString(),
+            validationErrors = it,
+        )
+    }

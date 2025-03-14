@@ -25,7 +25,7 @@ import com.sparetimedevs.ami.scoresynth.handler.handleSystemFailure
 import com.sparetimedevs.ami.scoresynth.mapLeftToDomainError
 import com.sparetimedevs.ami.scoresynth.orchestration.Orchestration
 import com.sparetimedevs.ami.scoresynth.orchestration.Orchestrator
-import com.sparetimedevs.ami.scoresynth.orchestration.util.toEitherAccumulatedValidationErrorsOrA
+import com.sparetimedevs.ami.scoresynth.orchestration.util.asEitherWithAccumulatedValidationErrors
 import com.sparetimedevs.ami.scoresynth.orchestration.validation.validateOrchestrationId
 import com.sparetimedevs.ami.scoresynth.resolve
 import kotlinx.serialization.Serializable
@@ -51,7 +51,7 @@ class ReplyController(
         resolve(
             f = {
                 validateOrchestrationId(uuid)
-                    .toEitherAccumulatedValidationErrorsOrA()
+                    .asEitherWithAccumulatedValidationErrors()
                     .flatMap { orchestrationId ->
                         orchestrator.orchestrationState(orchestrationId)
                     }.mapLeftToDomainError()
